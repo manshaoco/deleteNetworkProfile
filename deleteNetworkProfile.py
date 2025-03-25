@@ -8,6 +8,10 @@ from PySide6.QtWidgets import (QApplication, QWidget, QListWidget, QPushButton,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor, QIcon, QAction
 
+# 全局变量&常量
+versionNumber = "1.3"
+versionDate = "2025-03-24"
+
 def is_admin():
     """检查当前是否以管理员权限运行"""
     try:
@@ -29,7 +33,7 @@ class RegistryCleaner(QWidget):
     def __init__(self):
         super().__init__()
         # 窗口设置
-        self.setWindowTitle("Windows 网络配置清理工具")
+        self.setWindowTitle("Windows 网络配置清理工具 - " + versionNumber)
         self.resize(800, 600)
         self.setMinimumSize(800, 600)
         # 设置窗口背景色
@@ -81,12 +85,20 @@ class RegistryCleaner(QWidget):
         self.label_signatures = QLabel("🍕位于 Signatures 注册表的连接过的网络")
         self.list_widget_profiles = QListWidget()
         self.list_widget_signatures = QListWidget()
-        self.btn_refresh_profiles = QPushButton("刷新 Profiles 列表")
-        self.btn_refresh_signatures = QPushButton("刷新 Signatures 列表")
-        self.btn_delete_profiles = QPushButton("删除选中 Profiles 项")
-        self.btn_delete_signatures = QPushButton("删除选中 Signatures 项")
+        self.btn_refresh_profiles = QPushButton("刷新")
+        self.btn_refresh_signatures = QPushButton("刷新")
+        self.btn_delete_profiles = QPushButton("删除选中 Profiles")
+        self.btn_delete_signatures = QPushButton("删除选中 Signatures")
+        self.btn_select_all_profiles = QPushButton("全选")
+        self.btn_select_all_signatures = QPushButton("全选")
         
         # 按钮样式
+        self.btn_refresh_profiles.setObjectName("refreshBtn")
+        self.btn_refresh_signatures.setObjectName("refreshBtn")
+        self.btn_delete_profiles.setObjectName("delBtn1")
+        self.btn_delete_signatures.setObjectName("delBtn2")
+        self.btn_select_all_profiles.setObjectName("selectAllBtn")
+        self.btn_select_all_signatures.setObjectName("selectAllBtn")
         button_style = """
             QLabel {
                 font-size: 14px;  /* 设置表头文字大小 */
@@ -101,7 +113,7 @@ class RegistryCleaner(QWidget):
                 padding: 8px;  /* 设置列表项内边距 */
             }
             QPushButton {
-                min-width: 120px;
+                min-width: 60px;
                 min-height: 40px;
                 padding: 8px 15px;
                 font-size: 14px;
@@ -111,6 +123,7 @@ class RegistryCleaner(QWidget):
             QPushButton#delBtn1 {
                 background-color: #c7565b;
                 color: white;
+                width: 120px;
             }
             QPushButton#delBtn1:hover {
                 background-color: #8f233f;
@@ -118,15 +131,25 @@ class RegistryCleaner(QWidget):
             QPushButton#delBtn2 {
                 background-color: #598ec4;
                 color: white;
+                width: 130px;
             }
             QPushButton#delBtn2:hover {
                 background-color: #234c8f;
             }
+            QPushButton#refreshBtn {
+                background-color: #fcfcfc;
+            }
+            QPushButton#refreshBtn:hover {
+                background-color: #ebebeb;
+            }
+            QPushButton#selectAllBtn {
+                background-color: #fffff3;
+            }
+            QPushButton#selectAllBtn:hover {
+                background-color: #ddddd3;
+            }
+            
         """
-        self.btn_refresh_profiles.setObjectName("refreshBtn")
-        self.btn_refresh_signatures.setObjectName("refreshBtn")
-        self.btn_delete_profiles.setObjectName("delBtn1")
-        self.btn_delete_signatures.setObjectName("delBtn2")
         self.setStyleSheet(button_style)
         
         # 布局设置
@@ -158,11 +181,11 @@ class RegistryCleaner(QWidget):
         btn_container = QHBoxLayout()
         btn_container.addStretch()
         btn_container.addWidget(self.btn_refresh_profiles)
-        btn_container.addSpacing(20)
+        btn_container.addWidget(self.btn_select_all_profiles)
         btn_container.addWidget(self.btn_delete_profiles)
-        btn_container.addSpacing(20)
+        btn_container.addSpacing(10)
         btn_container.addWidget(self.btn_refresh_signatures)
-        btn_container.addSpacing(20)
+        btn_container.addWidget(self.btn_select_all_signatures)
         btn_container.addWidget(self.btn_delete_signatures)
         btn_container.addStretch()
         
@@ -174,6 +197,8 @@ class RegistryCleaner(QWidget):
         self.btn_refresh_signatures.clicked.connect(self.load_registry_items_signatures)
         self.btn_delete_profiles.clicked.connect(self.delete_selected_items_profiles)
         self.btn_delete_signatures.clicked.connect(self.delete_selected_items_signatures)
+        self.btn_select_all_profiles.clicked.connect(self.toggle_select_all_profiles)
+        self.btn_select_all_signatures.clicked.connect(self.toggle_select_all_signatures)
         
         # 初始加载数据
         self.load_registry_items_profiles()
@@ -181,8 +206,10 @@ class RegistryCleaner(QWidget):
 
     def show_about_dialog(self):
         """显示关于对话框"""
-        QMessageBox.about(self, "关于", "这是一个用于清理 Windows 网络配置的工具。\n\n你可以用它清理多余的“网络 2”、“网络 3”\n"
-        "以及“本地连接 2”、“本地连接 3”等条目\n\n至于为啥会有两个注册表项，咱也不清楚~🤣\n\n作者 Github：@manshaoco")
+        QMessageBox.about(self, "关于", 
+                          f"这是一个用于清理 Windows 网络配置的工具。\n\n你可以用它清理多余的“网络 2”、“网络 3”\n"
+                          f"以及“本地连接 2”、“本地连接 3”等条目\n\n至于为啥会有两个注册表项，咱也不清楚~🤣\n\n"
+                          f"版本号：{versionNumber} ({versionDate})\n作者 Github：@manshaoco")
 
 
     def load_registry_items_profiles(self):
@@ -292,11 +319,11 @@ class RegistryCleaner(QWidget):
                 # 显示操作结果
                 result_msg = []
                 if success:
-                    result_msg.append(f"成功删除：{', '.join(success)}")
+                    result_msg.append(f"已成功删除：{', '.join(success)}")
                 if failed:
                     result_msg.append(f"删除失败：")
                     result_msg.extend([f"{name}: {reason}" for name, reason in failed])
-                QMessageBox.information(self, "操作结果", "\n".join(result_msg))
+                QMessageBox.information(self, "结果", "\n".join(result_msg))
                 
             except WindowsError as e:
                 QMessageBox.critical(self, "错误", 
@@ -343,15 +370,27 @@ class RegistryCleaner(QWidget):
                 # 显示操作结果
                 result_msg = []
                 if success:
-                    result_msg.append(f"成功删除：{', '.join(success)}")
+                    result_msg.append(f"已成功删除：{', '.join(success)}")
                 if failed:
                     result_msg.append(f"删除失败：")
                     result_msg.extend([f"{name}: {reason}" for name, reason in failed])
-                QMessageBox.information(self, "操作结果", "\n".join(result_msg))
+                QMessageBox.information(self, "结果", "\n".join(result_msg))
                 
             except WindowsError as e:
                 QMessageBox.critical(self, "错误", 
                     f"需要管理员权限！请以管理员身份运行本程序。\n错误详情：{str(e)}")
+
+    def toggle_select_all_profiles(self):
+        """全选/全不选 Profiles 列表项"""
+        all_selected = all(self.list_widget_profiles.item(i).checkState() == Qt.Checked for i in range(self.list_widget_profiles.count()))
+        for i in range(self.list_widget_profiles.count()):
+            self.list_widget_profiles.item(i).setCheckState(Qt.Unchecked if all_selected else Qt.Checked)
+
+    def toggle_select_all_signatures(self):
+        """全选/全不选 Signatures 列表项"""
+        all_selected = all(self.list_widget_signatures.item(i).checkState() == Qt.Checked for i in range(self.list_widget_signatures.count()))
+        for i in range(self.list_widget_signatures.count()):
+            self.list_widget_signatures.item(i).setCheckState(Qt.Unchecked if all_selected else Qt.Checked)
 
 if __name__ == "__main__":
     # UAC提权逻辑
